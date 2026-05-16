@@ -1,13 +1,14 @@
-# Aristotle Medium-Tier Dispatch Queue: ATH-1267
+# Aristotle Medium-Tier Dispatch Queue : ATH-1267
 
 **Scope**: general applied math, Aristotle-eligible per Aidan ts 1778764427 NDA-rule (no Annapurna / Trainium / Neuron content).
 
-**Dispatch policy**: per `feedback_pythia_rules`: Aristotle is *last resort* after sonnet/kairos/own-proof attempt. Each target below has been pre-screened: easy-tier closures (algebraic + Real.log/exp manipulation) handled locally by sonnet subagents in batches 1-3 (33 closures on `research/ath-1267-fin-easy-batch`).
+**Dispatch policy**: per `feedback_pythia_rules` : Aristotle is *last resort* after sonnet/kairos/own-proof attempt. Each target below has been pre-screened: easy-tier closures (algebraic + Real.log/exp manipulation) handled locally by sonnet subagents in batches 1-3 (33 closures on `research/ath-1267-fin-easy-batch`).
 
-**Both accounts in parallel**: `ARISTOTLE_API_KEY_RESEARCH` + `ARISTOTLE_API_KEY_CTO` available on Azure-VM research workspace. Submit-and-watch per `feedback_aristotle_patience_1h_gate`: 1h+ stalls normal.
+**Both accounts in parallel**: `ARISTOTLE_API_KEY_RESEARCH` + `ARISTOTLE_API_KEY_CTO` available on Azure-VM research workspace. Submit-and-watch per `feedback_aristotle_patience_1h_gate` : 1h+ stalls normal.
 
+***
 
-## Target 1: Black-Scholes call-price intrinsic upper bound
+## Target 1 : Black-Scholes call-price intrinsic upper bound
 
 **File target**: `Pythia/Finance/BlackScholesUpperBound.lean` (new)
 
@@ -23,8 +24,9 @@ theorem callPayoff_le_spot {S K T r : ℝ} (hS : 0 ≤ S) (hK : 0 ≤ K) (hT : 0
 
 **Decomposition hint** (if Aristotle requested): split into (a) `max_le_spot_when_K_nonneg : 0 ≤ K → max (S - K) 0 ≤ max S 0`, (b) `discount_le_one`, (c) compose.
 
+***
 
-## Target 2: Sharpe ratio under linear pricing invariance (medium form)
+## Target 2 : Sharpe ratio under linear pricing invariance (medium form)
 
 **File target**: `Pythia/Finance/SharpeAffine.lean` (new)
 
@@ -40,8 +42,9 @@ theorem sharpeRatio_affine_riskfree {μ σ rf β : ℝ} (hσ : 0 < σ) :
 
 **Decomposition hint**: `unfold sharpeRatio; field_simp; ring`.
 
+***
 
-## Target 3: Itô isometry (HARD-tier candidate; medium if scoped to deterministic-integrand case)
+## Target 3 : Itô isometry (HARD-tier candidate; medium if scoped to deterministic-integrand case)
 
 **File target**: `Pythia/Finance/ItoIsometryDeterministic.lean` (new)
 
@@ -58,12 +61,13 @@ theorem ito_isometry_deterministic_step
 
 **Dependencies**: Mathlib `MeasureTheory.Probability.BrownianMotion` (if exists) or own-construction.
 
-**Decomposition hint**: defer to hard-tier if Mathlib infra absent: decompose into (a) Brownian increments are independent normal, (b) E[ΔW²] = Δt, (c) sum of step-integrand contributions.
+**Decomposition hint**: defer to hard-tier if Mathlib infra absent : decompose into (a) Brownian increments are independent normal, (b) E[ΔW²] = Δt, (c) sum of step-integrand contributions.
 
 **STATUS**: defer-to-hard-tier unless Mathlib infrastructure verified. Mark as Aristotle-skip if infra missing.
 
+***
 
-## Target 4: Girsanov measure-change (HARD-tier; explicitly scoped)
+## Target 4 : Girsanov measure-change (HARD-tier; explicitly scoped)
 
 **File target**: `Pythia/Finance/GirsanovDriftRemoval.lean` (new)
 
@@ -82,12 +86,13 @@ theorem ito_isometry_deterministic_step
 
 **Each sub-lemma**: submit independently to Aristotle; compose locally.
 
-**STATUS**: not yet ready for dispatch: needs Pythia.MeasureTheory.RadonNikodym infrastructure first (already exists per Pythia.Frontier.MeasureTheory.PathMeasureRN).
+**STATUS**: not yet ready for dispatch : needs Pythia.MeasureTheory.RadonNikodym infrastructure first (already exists per Pythia.Frontier.MeasureTheory.PathMeasureRN).
 
+***
 
-## Target 5: LP strong duality (medium under linearity, hard under general)
+## Target 5 : LP strong duality (medium under linearity, hard under general)
 
-**File target**: `Pythia/Optimization/LPDuality.lean` (likely already drafted on `research/ath-1267-pythia-expansion` per asabi 13:00Z claim: VERIFY before re-drafting; that branch was retracted as confabulation 2026-05-14 13:30Z but the LP weak_duality lemma name surfaced reliably).
+**File target**: `Pythia/Optimization/LPDuality.lean` (likely already drafted on `research/ath-1267-pythia-expansion` per asabi 13:00Z claim : VERIFY before re-drafting; that branch was retracted as confabulation 2026-05-14 13:30Z but the LP weak_duality lemma name surfaced reliably).
 
 **Statement (strong-duality, medium under bounded-feasible)**:
 ```lean
@@ -106,6 +111,7 @@ theorem lp_strong_duality
 
 **STATUS**: pre-flight VERIFY existing `LPDuality.lean` not already drafted, then submit sub-lemma (b) Farkas-lemma to Aristotle.
 
+***
 
 ## Dispatch protocol
 
@@ -113,7 +119,7 @@ theorem lp_strong_duality
 2. Sonnet sub-agent attempt FIRST (per `feedback_close_easy_lemmas_locally`).
 3. If sonnet fails after N tries OR target depends on missing Mathlib infra → Aristotle.
 4. Both accounts fire in parallel for different targets (no single-target collision).
-5. Per `feedback_aristotle_patience_1h_gate`: 1h+ stalls normal; don't cancel at 20m.
+5. Per `feedback_aristotle_patience_1h_gate` : 1h+ stalls normal; don't cancel at 20m.
 6. Receipt: capture Aristotle project-id + result-tarball per `reference_aristotle_results_location` convention.
 
 ## Skip list (do NOT submit to Aristotle)
@@ -124,6 +130,6 @@ theorem lp_strong_duality
 
 ## Pre-flight checks before each dispatch
 
-- `gh pr list --author @me --state open`: avoid duplicate work (per `feedback_check_fleet_state_before_starting_work`).
-- Mathlib originality grep: confirm theorem name not already named in Mathlib namespace.
+- `gh pr list --author @me --state open` : avoid duplicate work (per `feedback_check_fleet_state_before_starting_work`).
+- Mathlib originality grep : confirm theorem name not already named in Mathlib namespace.
 - Sonnet sub-agent attempt at least once first.
