@@ -21,8 +21,8 @@ remain in `Pythia/Frontier/` (frontier matrix analysis, not on the CI gate).
 
 <!-- pythia-stats-auto-begin -->
 **Coverage**:
-- 2207 theorem/lemma declarations in `Pythia/`
-- 1057 `@[stat_lemma]`-tagged theorems in the `pythia` tactic cascade8f42148 (feat: 3 new real-proof finance Lean specs (31 theorems, zero sorry))
+- 2268 theorem/lemma declarations in `Pythia/`
+- 1117 `@[stat_lemma]`-tagged theorems in the `pythia` tactic cascade4dc1e23 (feat: CreditSpreadModel + InformationRatio fix (20 theorems))
 - 42 cross-domain theorems with Lean proof + Python sim runner across 16 domains (biology, chemistry, control, economics, engineering, finance, game_theory, info_theory, mathlib_tags, mechanical, numerical, optimal_transport, or, quantum, stochastic, thermodynamics)
 
 Auto-tracked from [`tools/sim/theorem_manifest.py`](tools/sim/theorem_manifest.py) and the `Pythia/` source tree; regenerate via `python3 tools/refresh_readme_stats.py`.
