@@ -165,8 +165,8 @@ Emits an info message:
 
 ```
 pythia? : closed by `linarith_chain`. Ladder timing:
-  stat_simp: failed : @[stat_simp] (ATH-754) + core simp closure
-  linarith_chain: CLOSED in 8ms : linarith / nlinarith / polyrith arithmetic
+  stat_simp: failed, @[stat_simp] (ATH-754) + core simp closure
+  linarith_chain: CLOSED in 8ms. linarith / nlinarith / polyrith arithmetic
   positivity: skipped (already closed)
   aesop_pythia: skipped (already closed)
   ...
