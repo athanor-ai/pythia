@@ -108,7 +108,7 @@ timing (the `?` suffix follows Lean convention: `apply?`, `rw?`,
 <!-- doctest: skip-reason: tutorial continuation; see L52 block for imports -->
 ```lean
 example (a : ℝ) (h : 0 ≤ a) : 0 ≤ a + 1 := by pythia?
--- Lean reports: pythia? — closed by `linarith_chain`. Ladder timing: ...
+-- Lean reports: pythia? : closed by `linarith_chain`. Ladder timing: ...
 ```
 
 ### 2.2 `anytime_valid`: Ville bounds, supermartingale tail bounds, e-process tails
