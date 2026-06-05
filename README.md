@@ -21,8 +21,8 @@ remain in `Pythia/Frontier/` (frontier matrix analysis, not on the CI gate).
 
 <!-- pythia-stats-auto-begin -->
 **Coverage**:
-- 2167 theorem/lemma declarations in `Pythia/`
-- 1014 `@[stat_lemma]`-tagged theorems in the `pythia` tactic cascade
+- 2261 theorem/lemma declarations in `Pythia/`
+- 1117 `@[stat_lemma]`-tagged theorems in the `pythia` tactic cascade
 - 42 cross-domain theorems with Lean proof + Python sim runner across 16 domains (biology, chemistry, control, economics, engineering, finance, game_theory, info_theory, mathlib_tags, mechanical, numerical, optimal_transport, or, quantum, stochastic, thermodynamics)
 
 Auto-tracked from [`tools/sim/theorem_manifest.py`](tools/sim/theorem_manifest.py) and the `Pythia/` source tree; regenerate via `python3 tools/refresh_readme_stats.py`.
@@ -55,7 +55,7 @@ paired empirical verification.
 
 | Module | Theorems | Coverage |
 |--------|----------|----------|
-| `Pythia.Probability` | 347 | Anytime-valid confidence sequences (Howard-Ramdas, betting), Ville's inequality, sub-Gaussian and sub-gamma concentration, Bernstein and Bennett inequalities, optional stopping, e-detectors, Robbins-Monro and Dvoretzky stochastic approximation |
+| `Pythia.Probability` | 340 | Anytime-valid confidence sequences (Howard-Ramdas, betting), Ville's inequality, sub-Gaussian and sub-gamma concentration, Bernstein and Bennett inequalities, optional stopping, e-detectors, Robbins-Monro and Dvoretzky stochastic approximation |
 | `Pythia.LanguageSemantics` | 134 | Cedar policy-language type soundness and coverage completeness, Palamedes generator correctness (totality, support characterization, data-structure invariants for lists, trees, natural numbers, STLC types and terms, stacks) |
 | `Pythia.Actuarial` | 21 | Pareto, Weibull, log-normal loss distributions; Cramér-Lundberg ruin, Sparre Andersen renewal-theory ruin, Bornhuetter-Ferguson reserving |
 | `Pythia.Numerical` | 71 | KKT necessary/sufficient conditions (Slater, Lagrangian sandwich), Picard-Lindelof, Lyapunov stability, Kahan compensated summation, Forward Euler truncation, IEEE-754 round-to-nearest, QR factorization, Weyl/Bauer-Fike eigenvalue bounds, gradient descent convergence, MatMul/Softmax/LayerNorm/Attention numerical error bounds (Higham Thm 3.1) |
