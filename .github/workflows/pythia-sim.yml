@@ -67,6 +67,7 @@ jobs:
         # tolerate Codecov outages without failing the sweep.
         uses: codecov/codecov-action@v6
         if: always()
+        continue-on-error: true
         with:
           files: ./coverage.xml
           flags: tools
