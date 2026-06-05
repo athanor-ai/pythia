@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   md-lint:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
