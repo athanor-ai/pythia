@@ -340,8 +340,8 @@ theorem exponential_markov
     {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ]
     {X : Ω → ℝ} (hX : Measurable X)
-    (h_int : Integrable (fun ω => Real.exp (lam * X ω)) μ)
     {lam : ℝ} (hlam : 0 < lam)
+    (h_int : Integrable (fun ω => Real.exp (lam * X ω)) μ)
     (t : ℝ) :
     μ {ω | X ω ≥ t} ≤
       ENNReal.ofReal (Real.exp (-lam * t) *
