@@ -179,3 +179,9 @@ jobs:
         env:
           LD_LIBRARY_PATH: ${{ env.pythonLocation }}/lib
 
+      - uses: ./.github/actions/slack-fail-notify
+        if: failure()
+        with:
+          job-name: build
+          slack-bot-token: ${{ secrets.SLACK_CI_BOT_TOKEN }}
+
