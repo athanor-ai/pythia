@@ -275,10 +275,25 @@ theorem mgf_le_subGaussian_of_bounded
         (Set.mem_univ (lam * b))
         (show (b - X ω) / (b - a) ≥ 0 from div_nonneg (by linarith) h_ba_pos.le)
         (show (X ω - a) / (b - a) ≥ 0 from div_nonneg (by linarith) h_ba_pos.le)
-        (show (b - X ω) / (b - a) + (X ω - a) / (b - a) = 1 by field_simp)
+        (show (b - X ω) / (b - a) + (X ω - a) / (b - a) = 1 by
+          field_simp [h_ba_pos.ne']; ring)
       simp only [smul_eq_mul] at h_convex
       convert h_convex using 1
       congr 1; field_simp; ring
+    -- X is integrable (bounded on a probability space) and a ≤ 0 (from E[X]=0, X≥a)
+    have hX_int : Integrable X μ := by
+      apply Integrable.mono' (integrable_const (max |a| |b|))
+      · exact hX.aestronglyMeasurable
+      · filter_upwards [h_bounded] with ω ⟨ha_ω, hb_ω⟩
+        rw [Real.norm_eq_abs]
+        exact abs_le.mpr ⟨by linarith [neg_abs_le a, le_max_left |a| |b|],
+                           by linarith [le_abs_self b, le_max_right |a| |b|]⟩
+    have ha_le : a ≤ 0 := by
+      have : a ≤ ∫ ω, X ω ∂μ := by
+        calc a = ∫ _, a ∂μ := by simp [integral_const]
+          _ ≤ ∫ ω, X ω ∂μ := integral_mono_ae (integrable_const a) hX_int
+              (by filter_upwards [h_bounded] with ω ⟨ha_ω, _⟩; exact ha_ω)
+      linarith
     -- Take expectation of the convex bound
     have h_integral_bound :
         ∫ ω, Real.exp (lam * X ω) ∂μ ≤
@@ -286,28 +301,22 @@ theorem mgf_le_subGaussian_of_bounded
           (-a / (b - a)) * Real.exp (lam * b) := by
       calc ∫ ω, Real.exp (lam * X ω) ∂μ
           ≤ ∫ ω, (((b - X ω) / (b - a)) * Real.exp (lam * a) +
-                   ((X ω - a) / (b - a)) * Real.exp (lam * b)) ∂μ :=
-            MeasureTheory.integral_mono_ae h_int
-              (Integrable.add
-                ((integrable_const _).mul_const _)
-                ((integrable_const _).mul_const _))
-              h_convex_bound
+                   ((X ω - a) / (b - a)) * Real.exp (lam * b)) ∂μ := by
+            apply MeasureTheory.integral_mono_ae h_int
+            · exact (((integrable_const b).sub hX_int).div_const _).mul_const _
+                |>.add (((hX_int.sub (integrable_const a)).div_const _).mul_const _)
+            · exact h_convex_bound
         _ = (b / (b - a)) * Real.exp (lam * a) +
             (-a / (b - a)) * Real.exp (lam * b) := by
-          simp_rw [MeasureTheory.integral_add
-            (Integrable.const_mul (integrable_const _) _)
-            (Integrable.const_mul h_int _)]
-          simp_rw [MeasureTheory.integral_mul_right, MeasureTheory.integral_div]
-          rw [show ∫ ω, (b - X ω) ∂μ = b - ∫ ω, X ω ∂μ from by
-            simp [MeasureTheory.integral_sub (integrable_const _) (h_int.mono_ae (by
-              filter_upwards [h_bounded] with ω ⟨ha_ω, hb_ω⟩; exact ⟨_, _⟩ <;> nlinarith)),
-              MeasureTheory.integral_const, MeasureTheory.IsProbabilityMeasure.measure_univ]]
-          rw [show ∫ ω, (X ω - a) ∂μ = (∫ ω, X ω ∂μ) - a from by
-            simp [MeasureTheory.integral_sub (h_int.mono_ae (by
-              filter_upwards [h_bounded] with ω ⟨ha_ω, hb_ω⟩; exact ⟨_, _⟩ <;> nlinarith))
-              (integrable_const _),
-              MeasureTheory.integral_const, MeasureTheory.IsProbabilityMeasure.measure_univ]]
-          rw [h_mean]; ring_nf
+          have h1 : Integrable (fun ω => (b - X ω) / (b - a) * Real.exp (lam * a)) μ :=
+            ((integrable_const b).sub hX_int).div_const _ |>.mul_const _
+          have h2 : Integrable (fun ω => (X ω - a) / (b - a) * Real.exp (lam * b)) μ :=
+            (hX_int.sub (integrable_const a)).div_const _ |>.mul_const _
+          rw [integral_add h1 h2]
+          simp_rw [div_mul_eq_mul_div, integral_div, integral_mul_const]
+          rw [integral_sub (integrable_const b) hX_int,
+              integral_sub hX_int (integrable_const a)]
+          simp [integral_const, h_mean]
     -- Now use the cosh bound: (b/(b-a))e^{λa} + (-a/(b-a))e^{λb} ≤ e^{λ²(b-a)²/8}
     -- This follows from: let p = -a/(b-a), h = λ(b-a), then
     -- (1-p)e^{λa} + pe^{λb} = e^{λa}(1-p+pe^h) and
@@ -319,17 +328,25 @@ theorem mgf_le_subGaussian_of_bounded
         -- Apply hoeffding_cosh_bound with p = -a/(b-a), h = lam*(b-a).
         set p' := -a / (b - a)
         set h' := lam * (b - a)
-        have hp'_nn : 0 ≤ p' := by unfold_let p'; positivity
+        have hp'_nn : 0 ≤ p' :=
+          div_nonneg (neg_nonneg.mpr ha_le) h_ba_pos.le
+        have hb_ge : 0 ≤ b := by
+          have : ∫ ω, X ω ∂μ ≤ b := by
+            calc ∫ ω, X ω ∂μ ≤ ∫ _, b ∂μ := integral_mono_ae hX_int (integrable_const b)
+                  (by filter_upwards [h_bounded] with ω ⟨_, hb_ω⟩; exact hb_ω)
+              _ = b := by simp [integral_const]
+          linarith
         have hp'_le : p' ≤ 1 := by
-          unfold_let p'; rw [neg_div, div_le_one h_ba_pos]; linarith
+          show -a / (b - a) ≤ 1
+          rw [div_le_one h_ba_pos]; linarith
         -- Show LHS equals the form expected by hoeffding_cosh_bound
         have h_lhs_eq : (b / (b - a)) * Real.exp (lam * a) +
             (-a / (b - a)) * Real.exp (lam * b) =
             (1 - p') * Real.exp (-p' * h') + p' * Real.exp ((1 - p') * h') := by
-          unfold_let p' h'; field_simp; ring
+          simp only [p', h']; field_simp; ring_nf
         have h_rhs_eq : Real.exp (lam ^ 2 * (b - a) ^ 2 / 8) =
             Real.exp (h' ^ 2 / 8) := by
-          unfold_let h'; ring_nf
+          simp only [h']; ring_nf
         rw [h_lhs_eq, h_rhs_eq]
         exact hoeffding_cosh_bound p' h' hp'_nn hp'_le
 
@@ -355,14 +372,17 @@ theorem exponential_markov
     intro ω (hω : t ≤ X ω)
     exact Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hω (le_of_lt hlam))
   -- Step 2: Markov on exp(λX): c · μ{f ≥ c} ≤ ∫ f for f ≥ 0, c > 0
-  have h_markov := mul_meas_ge_le_integral_of_nonneg hexp_nn h_int hexp_t_pos
+  have h_markov := mul_meas_ge_le_integral_of_nonneg hexp_nn h_int (Real.exp (lam * t))
   -- Step 3: Rearrange and lift toReal → ENNReal
   have h_fin : μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)} ≠ ⊤ :=
     measure_ne_top μ _
   have h_toReal : (μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)}).toReal ≤
       Real.exp (-lam * t) * ∫ ω, Real.exp (lam * X ω) ∂μ := by
-    rw [show -lam * t = -(lam * t) by ring, Real.exp_neg]
-    exact le_div_iff₀ hexp_t_pos |>.mpr h_markov
+    rw [show -lam * t = -(lam * t) by ring, Real.exp_neg,
+        show (μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)}).toReal =
+          μ.real {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)} from
+          (MeasureTheory.Measure.real_def μ _).symm]
+    exact (le_inv_mul_iff₀ hexp_t_pos).mpr h_markov
   calc μ {ω | X ω ≥ t}
       ≤ μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)} :=
         measure_mono h_subset
