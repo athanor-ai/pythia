@@ -288,9 +288,9 @@ theorem mgf_le_subGaussian_of_bounded
           ≤ ∫ ω, (((b - X ω) / (b - a)) * Real.exp (lam * a) +
                    ((X ω - a) / (b - a)) * Real.exp (lam * b)) ∂μ :=
             MeasureTheory.integral_mono_ae h_int
-              (by exact Integrable.add (Integrable.const_mul (integrable_const _) _)
-                                       (Integrable.const_mul h_int _) |>.mono_ae
-                (by filter_upwards [h_bounded] with ω ⟨ha_ω, hb_ω⟩; positivity))
+              (Integrable.add
+                ((integrable_const _).mul_const _)
+                ((integrable_const _).mul_const _))
               h_convex_bound
         _ = (b / (b - a)) * Real.exp (lam * a) +
             (-a / (b - a)) * Real.exp (lam * b) := by
