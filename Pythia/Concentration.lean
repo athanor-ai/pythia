@@ -346,11 +346,32 @@ theorem exponential_markov
     μ {ω | X ω ≥ t} ≤
       ENNReal.ofReal (Real.exp (-lam * t) *
         ∫ ω, Real.exp (lam * X ω) ∂μ) := by
-  -- Rewrite: {X ≥ t} ⊆ {exp(λX) ≥ exp(λt)}, apply Markov via measure_le_integral.
-  -- Proof deferred pending Mathlib v4.28 API migration.
-  -- Original proof used meas_ge_le_integral_div which was removed in Mathlib.
-  -- New approach: use Integrable.measure_le_integral with normalization.
-  sorry
+  have hexp_t_pos : (0 : ℝ) < Real.exp (lam * t) := Real.exp_pos _
+  have hexp_nn : 0 ≤ᵐ[μ] fun ω => Real.exp (lam * X ω) :=
+    ae_of_all μ (fun ω => le_of_lt (Real.exp_pos _))
+  -- Step 1: {X ω ≥ t} ⊆ {exp(λX) ≥ exp(λt)} by monotonicity of exp
+  have h_subset : {ω | X ω ≥ t} ⊆
+      {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)} := by
+    intro ω (hω : t ≤ X ω)
+    exact Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hω (le_of_lt hlam))
+  -- Step 2: Markov on exp(λX): c · μ{f ≥ c} ≤ ∫ f for f ≥ 0, c > 0
+  have h_markov := mul_meas_ge_le_integral_of_nonneg hexp_nn h_int hexp_t_pos
+  -- Step 3: Rearrange and lift toReal → ENNReal
+  have h_fin : μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)} ≠ ⊤ :=
+    measure_ne_top μ _
+  have h_toReal : (μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)}).toReal ≤
+      Real.exp (-lam * t) * ∫ ω, Real.exp (lam * X ω) ∂μ := by
+    rw [show -lam * t = -(lam * t) by ring, Real.exp_neg]
+    exact le_div_iff₀ hexp_t_pos |>.mpr h_markov
+  calc μ {ω | X ω ≥ t}
+      ≤ μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)} :=
+        measure_mono h_subset
+    _ = ENNReal.ofReal
+          (μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)}).toReal :=
+        (ENNReal.ofReal_toReal h_fin).symm
+    _ ≤ ENNReal.ofReal (Real.exp (-lam * t) *
+          ∫ ω, Real.exp (lam * X ω) ∂μ) :=
+        ENNReal.ofReal_le_ofReal h_toReal
 
 /-! ## Section 3 — Hoeffding's inequality -/
 
