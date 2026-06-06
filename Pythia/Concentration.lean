@@ -30,7 +30,7 @@ Here `x = (1-p)·exp(-h/2)²` and `y = p·exp(h/2)²` (after rescaling).
 private lemma hoeffding_f_snd_deriv_le (p h : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
     p * (1 - p) * Real.exp h / (1 - p + p * Real.exp h) ^ 2 ≤ 1 / 4 := by
   have h_mixture_pos : (0 : ℝ) < 1 - p + p * Real.exp h := by
-    nlinarith [Real.exp_pos h]
+    have := Real.exp_pos h; nlinarith [mul_nonneg hp0 this.le]
   -- Use AM-GM: for a,b ≥ 0, ab ≤ (a+b)²/4
   -- Here a = (1-p), b = p·exp(h), so a·b = p(1-p)·exp(h) and a+b = 1-p+p·exp(h)
   have h_sq_pos : (0 : ℝ) < (1 - p + p * Real.exp h) ^ 2 := by positivity
@@ -58,17 +58,17 @@ private lemma hoeffding_log_bound (p h : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
   set g : ℝ → ℝ := fun t => Real.log (1 - p + p * Real.exp t) - p * t - t ^ 2 / 8
   -- The mixture 1-p+p*exp(t) is always positive
   have h_mix_pos : ∀ t, (0 : ℝ) < 1 - p + p * Real.exp t :=
-    fun t => by nlinarith [Real.exp_pos t]
+    fun t => by have := Real.exp_pos t; nlinarith [mul_nonneg hp0 this.le]
   -- g is differentiable (needed for antitoneOn_of_deriv_nonpos)
   have hg_diff : Differentiable ℝ g := by
     intro t
     have h_pos := h_mix_pos t
     have h_inner_diff : DifferentiableAt ℝ (fun x => 1 - p + p * Real.exp x) t :=
-      (differentiableAt_const (1 - p)).add ((differentiableAt_const p).mul differentiableAt_exp)
+      (differentiableAt_const (1 - p)).add ((differentiableAt_const p).mul Real.differentiableAt_exp)
     apply DifferentiableAt.sub
     · apply DifferentiableAt.sub
       · exact h_inner_diff.log h_pos.ne'
-      · exact (differentiableAt_const p).mul differentiableAt_id'
+      · exact (differentiableAt_const p).mul differentiableAt_id
     · exact (differentiableAt_pow 2).div_const 8
   -- g'(t) = p·exp(t)/(1-p+p·exp(t)) - p - t/4
   have hg_deriv : ∀ t, HasDerivAt g
@@ -77,7 +77,7 @@ private lemma hoeffding_log_bound (p h : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
     have h_pos := h_mix_pos t
     have h_ne : (1 : ℝ) - p + p * Real.exp t ≠ 0 := h_pos.ne'
     have hd1 : HasDerivAt (fun x => 1 - p + p * Real.exp x) (p * Real.exp t) t :=
-      ((hasDerivAt_exp t).const_mul p).const_add (1 - p)
+      ((Real.hasDerivAt_exp t).const_mul p).const_add (1 - p)
     have hd2 : HasDerivAt (fun x => Real.log (1 - p + p * Real.exp x))
         (p * Real.exp t / (1 - p + p * Real.exp t)) t :=
       hd1.log h_ne
@@ -106,12 +106,12 @@ private lemma hoeffding_log_bound (p h : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
     have h_pos := h_mix_pos t
     apply DifferentiableAt.sub
     · apply DifferentiableAt.sub
-      · exact ((differentiableAt_const p).mul differentiableAt_exp).div
+      · exact ((differentiableAt_const p).mul Real.differentiableAt_exp).div
           ((differentiableAt_const (1 - p)).add
-            ((differentiableAt_const p).mul differentiableAt_exp))
+            ((differentiableAt_const p).mul Real.differentiableAt_exp))
           h_pos.ne'
       · exact differentiableAt_const p
-    · exact differentiableAt_id'.div_const 4
+    · exact differentiableAt_id.div_const 4
   -- g''(t) = f''(t) - 1/4 ≤ 0 for all t
   -- (f''(t) = p(1-p)exp(t)/(1-p+p·exp(t))² ≤ 1/4 by hoeffding_f_snd_deriv_le)
   have hg''_nonpos : ∀ t, deriv (deriv g) t ≤ 0 := by
@@ -127,9 +127,9 @@ private lemma hoeffding_log_bound (p h : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
     have hd_quot : HasDerivAt (fun x => p * Real.exp x / (1 - p + p * Real.exp x))
         (p * (1 - p) * Real.exp t / (1 - p + p * Real.exp t) ^ 2) t := by
       have hnum : HasDerivAt (fun x => p * Real.exp x) (p * Real.exp t) t :=
-        (hasDerivAt_exp t).const_mul p
+        (Real.hasDerivAt_exp t).const_mul p
       have hden : HasDerivAt (fun x => 1 - p + p * Real.exp x) (p * Real.exp t) t :=
-        ((hasDerivAt_exp t).const_mul p).const_add (1 - p)
+        ((Real.hasDerivAt_exp t).const_mul p).const_add (1 - p)
       have := hnum.div hden h_pos.ne'
       convert this using 1
       field_simp [h_pos.ne']
@@ -138,7 +138,7 @@ private lemma hoeffding_log_bound (p h : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
         (p * (1 - p) * Real.exp t / (1 - p + p * Real.exp t) ^ 2 - 1 / 4) t := by
       have hd_const : HasDerivAt (fun _ : ℝ => p) 0 t := hasDerivAt_const t p
       have hd_lin : HasDerivAt (fun x : ℝ => x / 4) (1 / 4) t := by
-        have h : HasDerivAt (fun x : ℝ => x) 1 t := hasDerivAt_id' (𝕜 := ℝ)
+        have h : HasDerivAt (fun x : ℝ => x) 1 t := hasDerivAt_id t
         exact h.div_const 4
       convert (hd_quot.sub hd_const).sub hd_lin using 1; ring
     rw [hd_full.deriv]
@@ -154,7 +154,7 @@ private lemma hoeffding_log_bound (p h : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
   -- For h ≥ 0: g'(h) ≤ g'(0) = 0 (antitone), so g is non-increasing on [0,∞)
   -- For h ≤ 0: g'(h) ≥ g'(0) = 0 (antitone), so g is non-decreasing on (-∞,0]
   -- In both cases g(h) ≤ g(0) = 0.
-  rcases le_or_lt 0 h with hh | hh
+  rcases le_or_gt 0 h with hh | hh
   · -- Case h ≥ 0: g is antitone on [0, h], so g(h) ≤ g(0) = 0
     have hg_anti : AntitoneOn g (Set.Icc 0 h) := by
       apply antitoneOn_of_deriv_nonpos (convex_Icc 0 h)
@@ -167,7 +167,7 @@ private lemma hoeffding_log_bound (p h : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
     have hh_mem : h ∈ Set.Icc 0 h := ⟨hh, le_refl _⟩
     have h0_mem : (0 : ℝ) ∈ Set.Icc 0 h := ⟨le_refl _, hh⟩
     have := hg_anti h0_mem hh_mem hh
-    linarith [hg_zero]
+    change g h ≤ 0; linarith
   · -- Case h < 0: g is monotone on [h, 0], so g(h) ≤ g(0) = 0
     have hg_mono : MonotoneOn g (Set.Icc h 0) := by
       apply monotoneOn_of_deriv_nonneg (convex_Icc h 0)
@@ -180,7 +180,7 @@ private lemma hoeffding_log_bound (p h : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
     have hh_mem : h ∈ Set.Icc h 0 := ⟨le_refl _, hh.le⟩
     have h0_mem : (0 : ℝ) ∈ Set.Icc h 0 := ⟨hh.le, le_refl _⟩
     have := hg_mono hh_mem h0_mem hh.le
-    linarith [hg_zero]
+    change g h ≤ 0; linarith
 
 /--
 **Hoeffding's cosh bound.** For `p ∈ [0,1]` and any `h : ℝ`:
@@ -204,7 +204,7 @@ lemma hoeffding_cosh_bound (p h : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) :
   rw [h_factor]
   -- The mixture 1-p+p·exp(h) is positive
   have h_mixture_pos : (0 : ℝ) < 1 - p + p * Real.exp h := by
-    nlinarith [Real.exp_pos h]
+    have := Real.exp_pos h; nlinarith [mul_nonneg hp0 this.le]
   -- Rewrite target: exp(-ph)·(1-p+p·exp(h)) ≤ exp(h²/8)
   -- ⟺ -ph + log(1-p+p·exp(h)) ≤ h²/8  (since both sides positive, take log)
   -- ⟺ log(1-p+p·exp(h)) - ph ≤ h²/8
@@ -230,12 +230,21 @@ theorem mgf_exists_of_bounded
     (h_bounded : ∀ᵐ ω ∂μ, a ≤ X ω ∧ X ω ≤ b)
     (lam : ℝ) :
     Integrable (fun ω => Real.exp (lam * X ω)) μ := by
-  refine Integrable.mono' (f := fun _ => Real.exp (|lam| * b.max (-a))) ?_ ?_ ?_
-  · exact integrable_const _
+  apply Integrable.mono' (integrable_const (Real.exp (|lam| * max b (-a))))
   · exact (hX.const_mul lam).exp.aestronglyMeasurable
   · filter_upwards [h_bounded] with ω ⟨ha, hb⟩
     rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
-    exact Real.exp_le_exp.mpr (by nlinarith [abs_nonneg lam])
+    apply Real.exp_le_exp.mpr
+    have h1 : lam * X ω ≤ |lam * X ω| := le_abs_self _
+    have h2 : |lam * X ω| = |lam| * |X ω| := abs_mul lam (X ω)
+    have h3 : |X ω| ≤ max b (-a) := by
+      rw [abs_le]
+      constructor
+      · linarith [le_max_right b (-a)]
+      · linarith [le_max_left b (-a)]
+    have h4 : |lam| * |X ω| ≤ |lam| * max b (-a) :=
+      mul_le_mul_of_nonneg_left h3 (abs_nonneg lam)
+    linarith
 
 /-- MGF of a centered bounded variable is bounded by the sub-Gaussian form. -/
 theorem mgf_le_subGaussian_of_bounded
@@ -262,14 +271,29 @@ theorem mgf_le_subGaussian_of_bounded
           ((b - X ω) / (b - a)) * Real.exp (lam * a) +
           ((X ω - a) / (b - a)) * Real.exp (lam * b) := by
       filter_upwards [h_bounded] with ω ⟨ha_ω, hb_ω⟩
-      have h_convex := Real.convexOn_exp.2 (Set.mem_Icc.mpr ⟨le_refl a, hab.le⟩)
-        (Set.mem_Icc.mpr ⟨hab.le, le_refl b⟩)
-        (show (b - X ω) / (b - a) ≥ 0 by positivity)
-        (show (X ω - a) / (b - a) ≥ 0 by positivity)
-        (show (b - X ω) / (b - a) + (X ω - a) / (b - a) = 1 by field_simp)
+      have h_convex := convexOn_exp.2 (Set.mem_univ (lam * a))
+        (Set.mem_univ (lam * b))
+        (show (b - X ω) / (b - a) ≥ 0 from div_nonneg (by linarith) h_ba_pos.le)
+        (show (X ω - a) / (b - a) ≥ 0 from div_nonneg (by linarith) h_ba_pos.le)
+        (show (b - X ω) / (b - a) + (X ω - a) / (b - a) = 1 by
+          field_simp [h_ba_pos.ne']; ring)
+      simp only [smul_eq_mul] at h_convex
       convert h_convex using 1
-      · congr 1; field_simp; ring
-      · congr 1 <;> (congr 1; ring)
+      congr 1; field_simp; ring
+    -- X is integrable (bounded on a probability space) and a ≤ 0 (from E[X]=0, X≥a)
+    have hX_int : Integrable X μ := by
+      apply Integrable.mono' (integrable_const (max |a| |b|))
+      · exact hX.aestronglyMeasurable
+      · filter_upwards [h_bounded] with ω ⟨ha_ω, hb_ω⟩
+        rw [Real.norm_eq_abs]
+        exact abs_le.mpr ⟨by linarith [neg_abs_le a, le_max_left |a| |b|],
+                           by linarith [le_abs_self b, le_max_right |a| |b|]⟩
+    have ha_le : a ≤ 0 := by
+      have : a ≤ ∫ ω, X ω ∂μ := by
+        calc a = ∫ _, a ∂μ := by simp [integral_const]
+          _ ≤ ∫ ω, X ω ∂μ := integral_mono_ae (integrable_const a) hX_int
+              (by filter_upwards [h_bounded] with ω ⟨ha_ω, _⟩; exact ha_ω)
+      linarith
     -- Take expectation of the convex bound
     have h_integral_bound :
         ∫ ω, Real.exp (lam * X ω) ∂μ ≤
@@ -277,28 +301,22 @@ theorem mgf_le_subGaussian_of_bounded
           (-a / (b - a)) * Real.exp (lam * b) := by
       calc ∫ ω, Real.exp (lam * X ω) ∂μ
           ≤ ∫ ω, (((b - X ω) / (b - a)) * Real.exp (lam * a) +
-                   ((X ω - a) / (b - a)) * Real.exp (lam * b)) ∂μ :=
-            MeasureTheory.integral_mono_ae h_int
-              (by exact Integrable.add (Integrable.const_mul (integrable_const _) _)
-                                       (Integrable.const_mul h_int _) |>.mono_ae
-                (by filter_upwards [h_bounded] with ω ⟨ha_ω, hb_ω⟩; positivity))
-              h_convex_bound
+                   ((X ω - a) / (b - a)) * Real.exp (lam * b)) ∂μ := by
+            apply MeasureTheory.integral_mono_ae h_int
+            · exact (((integrable_const b).sub hX_int).div_const _).mul_const _
+                |>.add (((hX_int.sub (integrable_const a)).div_const _).mul_const _)
+            · exact h_convex_bound
         _ = (b / (b - a)) * Real.exp (lam * a) +
             (-a / (b - a)) * Real.exp (lam * b) := by
-          simp_rw [MeasureTheory.integral_add
-            (Integrable.const_mul (integrable_const _) _)
-            (Integrable.const_mul h_int _)]
-          simp_rw [MeasureTheory.integral_mul_right, MeasureTheory.integral_div]
-          rw [show ∫ ω, (b - X ω) ∂μ = b - ∫ ω, X ω ∂μ from by
-            simp [MeasureTheory.integral_sub (integrable_const _) (h_int.mono_ae (by
-              filter_upwards [h_bounded] with ω ⟨ha_ω, hb_ω⟩; exact ⟨_, _⟩ <;> nlinarith)),
-              MeasureTheory.integral_const, MeasureTheory.IsProbabilityMeasure.measure_univ]]
-          rw [show ∫ ω, (X ω - a) ∂μ = (∫ ω, X ω ∂μ) - a from by
-            simp [MeasureTheory.integral_sub (h_int.mono_ae (by
-              filter_upwards [h_bounded] with ω ⟨ha_ω, hb_ω⟩; exact ⟨_, _⟩ <;> nlinarith))
-              (integrable_const _),
-              MeasureTheory.integral_const, MeasureTheory.IsProbabilityMeasure.measure_univ]]
-          rw [h_mean]; ring_nf
+          have h1 : Integrable (fun ω => (b - X ω) / (b - a) * Real.exp (lam * a)) μ :=
+            ((integrable_const b).sub hX_int).div_const _ |>.mul_const _
+          have h2 : Integrable (fun ω => (X ω - a) / (b - a) * Real.exp (lam * b)) μ :=
+            (hX_int.sub (integrable_const a)).div_const _ |>.mul_const _
+          rw [integral_add h1 h2]
+          simp_rw [div_mul_eq_mul_div, integral_div, integral_mul_const]
+          rw [integral_sub (integrable_const b) hX_int,
+              integral_sub hX_int (integrable_const a)]
+          simp [integral_const, h_mean]
     -- Now use the cosh bound: (b/(b-a))e^{λa} + (-a/(b-a))e^{λb} ≤ e^{λ²(b-a)²/8}
     -- This follows from: let p = -a/(b-a), h = λ(b-a), then
     -- (1-p)e^{λa} + pe^{λb} = e^{λa}(1-p+pe^h) and
@@ -310,17 +328,25 @@ theorem mgf_le_subGaussian_of_bounded
         -- Apply hoeffding_cosh_bound with p = -a/(b-a), h = lam*(b-a).
         set p' := -a / (b - a)
         set h' := lam * (b - a)
-        have hp'_nn : 0 ≤ p' := by unfold_let p'; positivity
+        have hp'_nn : 0 ≤ p' :=
+          div_nonneg (neg_nonneg.mpr ha_le) h_ba_pos.le
+        have hb_ge : 0 ≤ b := by
+          have : ∫ ω, X ω ∂μ ≤ b := by
+            calc ∫ ω, X ω ∂μ ≤ ∫ _, b ∂μ := integral_mono_ae hX_int (integrable_const b)
+                  (by filter_upwards [h_bounded] with ω ⟨_, hb_ω⟩; exact hb_ω)
+              _ = b := by simp [integral_const]
+          linarith
         have hp'_le : p' ≤ 1 := by
-          unfold_let p'; rw [neg_div, div_le_one h_ba_pos]; linarith
+          show -a / (b - a) ≤ 1
+          rw [div_le_one h_ba_pos]; linarith
         -- Show LHS equals the form expected by hoeffding_cosh_bound
         have h_lhs_eq : (b / (b - a)) * Real.exp (lam * a) +
             (-a / (b - a)) * Real.exp (lam * b) =
             (1 - p') * Real.exp (-p' * h') + p' * Real.exp ((1 - p') * h') := by
-          unfold_let p' h'; field_simp; ring
+          simp only [p', h']; field_simp; ring_nf
         have h_rhs_eq : Real.exp (lam ^ 2 * (b - a) ^ 2 / 8) =
             Real.exp (h' ^ 2 / 8) := by
-          unfold_let h'; ring_nf
+          simp only [h']; ring_nf
         rw [h_lhs_eq, h_rhs_eq]
         exact hoeffding_cosh_bound p' h' hp'_nn hp'_le
 
@@ -331,26 +357,41 @@ theorem exponential_markov
     {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     [IsProbabilityMeasure μ]
     {X : Ω → ℝ} (hX : Measurable X)
-    (h_int : Integrable (fun ω => Real.exp (lam * X ω)) μ)
     {lam : ℝ} (hlam : 0 < lam)
+    (h_int : Integrable (fun ω => Real.exp (lam * X ω)) μ)
     (t : ℝ) :
     μ {ω | X ω ≥ t} ≤
       ENNReal.ofReal (Real.exp (-lam * t) *
         ∫ ω, Real.exp (lam * X ω) ∂μ) := by
-  -- Standard: {X ≥ t} = {exp(λX) ≥ exp(λt)}, apply Markov.
-  have h_eq : {ω | X ω ≥ t} = {ω | Real.exp (lam * X ω) ≥ Real.exp (lam * t)} := by
-    ext ω; simp [Real.exp_le_exp, mul_le_mul_left hlam]
-  rw [h_eq]
-  have h_markov := @MeasureTheory.meas_ge_le_integral_div μ
-    (fun ω => Real.exp (lam * X ω)) (Real.exp (lam * t)) ?_ ?_ ?_
-  · convert ENNReal.ofReal_le_ofReal ?_ using 1
-    · simp [measureReal_def]
-    · rw [div_eq_mul_inv, ← Real.exp_neg, ← Real.exp_add]
-      ring_nf
-      exact le_refl _
-  · exact Real.exp_pos _
-  · exact h_int
-  · filter_upwards with ω; exact (Real.exp_pos _).le
+  have hexp_t_pos : (0 : ℝ) < Real.exp (lam * t) := Real.exp_pos _
+  have hexp_nn : 0 ≤ᵐ[μ] fun ω => Real.exp (lam * X ω) :=
+    ae_of_all μ (fun ω => le_of_lt (Real.exp_pos _))
+  -- Step 1: {X ω ≥ t} ⊆ {exp(λX) ≥ exp(λt)} by monotonicity of exp
+  have h_subset : {ω | X ω ≥ t} ⊆
+      {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)} := by
+    intro ω (hω : t ≤ X ω)
+    exact Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left hω (le_of_lt hlam))
+  -- Step 2: Markov on exp(λX): c · μ{f ≥ c} ≤ ∫ f for f ≥ 0, c > 0
+  have h_markov := mul_meas_ge_le_integral_of_nonneg hexp_nn h_int (Real.exp (lam * t))
+  -- Step 3: Rearrange and lift toReal → ENNReal
+  have h_fin : μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)} ≠ ⊤ :=
+    measure_ne_top μ _
+  have h_toReal : (μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)}).toReal ≤
+      Real.exp (-lam * t) * ∫ ω, Real.exp (lam * X ω) ∂μ := by
+    rw [show -lam * t = -(lam * t) by ring, Real.exp_neg,
+        show (μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)}).toReal =
+          μ.real {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)} from
+          (MeasureTheory.Measure.real_def μ _).symm]
+    exact (le_inv_mul_iff₀ hexp_t_pos).mpr h_markov
+  calc μ {ω | X ω ≥ t}
+      ≤ μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)} :=
+        measure_mono h_subset
+    _ = ENNReal.ofReal
+          (μ {ω | Real.exp (lam * t) ≤ Real.exp (lam * X ω)}).toReal :=
+        (ENNReal.ofReal_toReal h_fin).symm
+    _ ≤ ENNReal.ofReal (Real.exp (-lam * t) *
+          ∫ ω, Real.exp (lam * X ω) ∂μ) :=
+        ENNReal.ofReal_le_ofReal h_toReal
 
 /-! ## Section 3 — Hoeffding's inequality -/
 
