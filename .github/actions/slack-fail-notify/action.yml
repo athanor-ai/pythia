@@ -1,0 +1,98 @@
+name: Slack Failure Alert
+description: Post to Slack immediately when a CI job fails, with failure details
+
+inputs:
+  job-name:
+    description: Human-readable job name for the alert
+    required: true
+  slack-bot-token:
+    description: Slack bot token
+    required: true
+  slack-channel:
+    description: Slack channel ID
+    required: false
+    default: C0AS22PBN5T
+  failure-details:
+    description: Optional failure details to include (e.g. failed test names)
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Post failure to Slack
+      shell: bash
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.slack-bot-token }}
+        SLACK_CHANNEL: ${{ inputs.slack-channel }}
+        JOB_NAME: ${{ inputs.job-name }}
+        FAILURE_DETAILS: ${{ inputs.failure-details }}
+      run: |
+        set -euo pipefail
+
+        BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF##refs/heads/}}"
+        SHORT_SHA="${GITHUB_SHA:0:8}"
+        ACTOR="${GITHUB_ACTOR}"
+        RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+        RUN_NUM="${GITHUB_RUN_NUMBER}"
+
+        MENTION=""
+        case "$ACTOR" in
+          athanor-bob*)       MENTION="<@U0AVC1TNJGN>" ;;
+          athanor-platypus*)  MENTION="<@U0ATML2EY0G>" ;;
+          athanor-quan*)      MENTION="<@U0ARRLHJD71>" ;;
+          athanor-ronald*)    MENTION="<@U0ASM17U1SP>" ;;
+          athanor-asabi*)     MENTION="<@U0ASGQQ4HPW>" ;;
+          athanor-maurice*)   MENTION="<@U0B3K2UBFV5>" ;;
+          aidanby)            MENTION="<@U0ASR5AKSRE>" ;;
+          hongsksam)          MENTION="<@U0AS6MYAGE9>" ;;
+        esac
+
+        PR_INFO=""
+        if [ -n "${GITHUB_HEAD_REF:-}" ]; then
+          PR_NUM=$(curl -s -H "Authorization: Bearer ${GITHUB_TOKEN:-}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?head=${GITHUB_REPOSITORY_OWNER}:${GITHUB_HEAD_REF}&state=open" \
+            | python3 -c "import sys,json; prs=json.load(sys.stdin); print(prs[0]['number'] if prs else '')" 2>/dev/null || echo "")
+          if [ -n "$PR_NUM" ]; then
+            PR_INFO=" (PR #${PR_NUM})"
+          fi
+        fi
+
+        # Build failure details: explicit input > junit XML > empty
+        DETAILS="$FAILURE_DETAILS"
+        if [ -z "$DETAILS" ] && [ -f "test-results.xml" ]; then
+          DETAILS=$(python3 -c "
+        import xml.etree.ElementTree as ET, sys
+        try:
+            tree = ET.parse('test-results.xml')
+            fails = []
+            for tc in tree.iter('testcase'):
+                if tc.find('failure') is not None:
+                    name = tc.get('name', '?')
+                    cls = tc.get('classname', '')
+                    msg = (tc.find('failure').get('message') or '')[:80]
+                    fails.append(f'{cls}::{name} — {msg}' if cls else f'{name} — {msg}')
+            for line in fails[:3]:
+                print(line)
+            if len(fails) > 3:
+                print(f'... and {len(fails)-3} more')
+        except Exception:
+            pass
+        " 2>/dev/null || true)
+        fi
+
+        TEXT=":rotating_light: *${JOB_NAME}* failed on \`${BRANCH}\` (${SHORT_SHA}) by ${ACTOR} — <${RUN_URL}|run #${RUN_NUM}>${PR_INFO}"
+        if [ -n "$DETAILS" ]; then
+          TEXT="${TEXT}\n\`\`\`${DETAILS}\`\`\`"
+        fi
+        if [ -n "$MENTION" ]; then
+          TEXT="${TEXT} ${MENTION}"
+        fi
+
+        PAYLOAD=$(jq -n --arg ch "$SLACK_CHANNEL" --arg txt "$TEXT" \
+          '{channel: $ch, text: $txt, unfurl_links: false}')
+        curl -s -X POST "https://slack.com/api/chat.postMessage" \
+          -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d "$PAYLOAD" \
+          > /dev/null

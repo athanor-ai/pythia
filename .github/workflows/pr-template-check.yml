@@ -25,7 +25,7 @@ jobs:
     if: github.event.pull_request.draft == false
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Validate PR body against template
@@ -36,3 +36,8 @@ jobs:
         # block missing or empty Summary blocks.
         run: |
           python3 tools/check_pr_body.py --from-event "$GITHUB_EVENT_PATH"
+      - uses: ./.github/actions/slack-fail-notify
+        if: failure()
+        with:
+          job-name: pr-template-check
+          slack-bot-token: ${{ secrets.SLACK_CI_BOT_TOKEN }}
