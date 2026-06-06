@@ -264,10 +264,24 @@ def _strip_code_blocks(text: str) -> str:
     return "\n".join(out_lines)
 
 
+def _in_hyphenated_identifier(text: str, m: re.Match) -> bool:
+    """True when the match sits inside a hyphenated compound like a
+    crate/package name (e.g. ``pythia-portfolio-leverage``).  A word
+    touching a hyphen on either side is an identifier, not prose."""
+    start, end = m.start(), m.end()
+    if start > 0 and text[start - 1] == "-":
+        return True
+    if end < len(text) and text[end] == "-":
+        return True
+    return False
+
+
 def check_vocabulary(text: str) -> list[Finding]:
     out: list[Finding] = []
     for pattern, sev, sugg in _VOCAB_COMPILED:
         for m in pattern.finditer(text):
+            if _in_hyphenated_identifier(text, m):
+                continue
             line, col = _line_col(text, m.start())
             out.append(Finding(
                 rule="vocabulary",
