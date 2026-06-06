@@ -271,14 +271,14 @@ theorem mgf_le_subGaussian_of_bounded
           ((b - X ω) / (b - a)) * Real.exp (lam * a) +
           ((X ω - a) / (b - a)) * Real.exp (lam * b) := by
       filter_upwards [h_bounded] with ω ⟨ha_ω, hb_ω⟩
-      have h_convex := convexOn_exp.2 (Set.mem_Icc.mpr ⟨le_refl a, hab.le⟩)
-        (Set.mem_Icc.mpr ⟨hab.le, le_refl b⟩)
-        (show (b - X ω) / (b - a) ≥ 0 by positivity)
-        (show (X ω - a) / (b - a) ≥ 0 by positivity)
+      have h_convex := convexOn_exp.2 (Set.mem_univ (lam * a))
+        (Set.mem_univ (lam * b))
+        (show (b - X ω) / (b - a) ≥ 0 from div_nonneg (by linarith) h_ba_pos.le)
+        (show (X ω - a) / (b - a) ≥ 0 from div_nonneg (by linarith) h_ba_pos.le)
         (show (b - X ω) / (b - a) + (X ω - a) / (b - a) = 1 by field_simp)
+      simp only [smul_eq_mul] at h_convex
       convert h_convex using 1
-      · congr 1; field_simp; ring
-      · congr 1 <;> (congr 1; ring)
+      congr 1; field_simp; ring
     -- Take expectation of the convex bound
     have h_integral_bound :
         ∫ ω, Real.exp (lam * X ω) ∂μ ≤
