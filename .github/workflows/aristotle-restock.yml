@@ -54,7 +54,7 @@ jobs:
             echo "::warning::ARISTOTLE_API_KEY not set; subsequent steps will skip."
           fi
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: steps.keycheck.outputs.have_key == 'true'
       - uses: actions/setup-python@v6
         if: steps.keycheck.outputs.have_key == 'true'

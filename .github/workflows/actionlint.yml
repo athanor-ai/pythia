@@ -27,7 +27,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Run actionlint
         run: |
           # Pinned to v1.7.7 (latest stable as of 2026-04-27). Bump
